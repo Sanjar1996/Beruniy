@@ -1,0 +1,57 @@
+  version: '2'
+
+  services:
+    beruniydb_prod:
+      container_name: beruniydb_prod
+      restart: always  
+      image: postgres:12.2
+      environment:
+        POSTGRES_DB: db_beruniy_prod
+        POSTGRES_USER: beruniyuser_prod
+        POSTGRES_PASSWORD: beruniypass_prod
+      networks:
+        - beruniy-network
+      volumes:
+          - beruniydata:/var/lib/postgresql/beruniydata/
+      
+    beruniyweb_prod:
+      container_name: beruniyweb_prod
+      restart: always  
+      build:
+        context: .
+        dockerfile: Dockerfile.prod
+      command: gunicorn config.wsgi:application --bind 0.0.0.0:2828
+      volumes:
+        - static_volume_beruniy:/home/app/web/static
+        - media_volume_beruniy:/home/app/web/media
+      networks:
+        - beruniy-network
+      depends_on: 
+        - beruniydb_prod
+      ports:
+        - "2828:2828"
+      env_file: 
+        - ./.env.prod
+
+    beruniynginx:
+      container_name: beruniy-nginx
+      restart: always
+      build: ./nginx
+      volumes:
+        - static_volume_beruniy:/home/app/web/static
+        - media_volume_beruniy:/home/app/web/media
+      ports:
+        - "4848:4848"
+      networks:
+        - beruniy-network
+      depends_on:
+        - beruniyweb_prod
+        
+  volumes:
+    beruniydata:
+    static_volume_beruniy:
+    media_volume_beruniy:
+
+  networks:
+    beruniy-network:
+      driver: bridge

@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  beruniydb:
+    container_name: beruniydb
+    image: postgres
+    environment:
+      POSTGRES_DB: db_beruniy
+      POSTGRES_USER: beruniyuser
+      POSTGRES_PASSWORD: beruniypass
+    volumes:
+      - postgres_data:/var/lib/postgresql/databeruniy/
+    ports:
+      - "5432:5432"
+  beruniyweb:
+    container_name: beruniy
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - beruniydb
+    env_file:
+      - ./.env.dev
+
+volumes:
+  postgres_data:
